@@ -4,8 +4,8 @@
 - [Tech Stack](#tech-stack)
 - [Repository Setup](#repository-setup)
 - [Running the App Locally](#running-the-app-locally)
-- [Code Explanation - chart.html](#code-explanation---chart.html)
-- [Code Explanation - app.py](#code-explanation---app.py)
+- [Code Explanation - chart.html](#code-explanation--chart.html)
+- [Code Explanation - app.py](#code-explanation--app.py)
 
 ## Tech Stack
 - Flask
@@ -52,7 +52,7 @@ Run the Flask app:
 flask run #or python app.py
 ```
 
-## Code Explanation - `chart.html`
+## Code Explanation - chart.html
 
 ### 1. Template Structure
 The HTML template defines a basic webpage layout with Plotly.js and jQuery included via CDNs. This page has two main containers:
@@ -99,7 +99,7 @@ On page load:
 - `getTreemapData()` is called to render the initial treemap.
 - `getExpenseHistory("All", "All")` fetches all available expense history for display in the initial line chart.
 
-## Code Explanation - `app.py`
+## Code Explanation - app.py
 
 ### Routes
 
