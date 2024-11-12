@@ -1,14 +1,10 @@
 import os
 from flask import (Flask, redirect, render_template, request,
                    send_from_directory, url_for, jsonify)
-from dotenv import load_dotenv
 import json
 from collections import defaultdict
 
 app = Flask(__name__)
-
-
-load_dotenv()
 
 @app.route('/api/expense-summary', methods=['GET'])
 def expense_summary():
