@@ -4,7 +4,8 @@
 - [Tech Stack](#tech-stack)
 - [Repository Setup](#repository-setup)
 - [Running the App Locally](#running-the-app-locally)
-- [Code Explanation](#code-explanation)
+- [Code Explanation - chart.html](#code-explanation---chart.html)
+- [Code Explanation - app.py](#code-explanation---app.py)
 
 ## Tech Stack
 - Flask
