@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Interactive Treemap</title>
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+        <style>
+            .container-fluid {
+                margin-right: 10;
+            }
+        </style>
+    </head>
+    <body>
+
+        <h2 style="text-align: center;">Interactive Treemap</h2>
+        <div class="container-fluid">
+            <div class="row no-gutters">
+                <div class="col-md-6 d-flex flex-column" id="treemap-chart"></div>
+                <div class="col-md-6 d-flex flex-column" id="line-chart"></div>
+            </div>
+        </div>
+        <script src="{{ url_for('static', filename='globals.js') }}"></script>
+        <script type="text/javascript">
+            function getTreemapData() {
+                return $.ajax({
+                    url: '/api/expense-summary',
+                    method: 'GET',
+                    dataType: 'json'
+                });
+            }
+
+            function getExpenseHistory(breakdown, mode) {
+                return $.ajax({
+                    url: '/api/expense-history',
+                    method: 'GET',
+                    data: {
+                        breakdown: breakdown,
+                        mode: mode
+                    },
+                    dataType: 'json'
+                });
+            }
+            function createExpenseLineChart(data, label) {
+                var df = data;
+
+                var trace = {
+                    x: df.map(row => row.BudgetMonth),
+                    y: df.map(row => row.TotalExpenses),
+                    fill: 'tonexty',
+                    type: 'scatter',
+                    mode: 'none',
+                    name: 'Total Expenses',
+                    fillcolor: "#a3aab1",
+                    hovertemplate: `
+                        BudgetMonth: %{x}<br>
+                        TotalExpenses: %{y}
+                    `
+                };
+
+                var layout = {
+                    title: "Expense Trend - " + label,
+                    font: {
+                        family: 'Roboto, sans-serif', 
+                        size: 12,
+                        color: '#000'
+                    },
+                    xaxis: {
+                        title: "",
+                        showgrid: true,
+                        gridcolor: '#f8f9fa',
+                        tickfont: {
+                            size: 10,
+                            color: 'gray'
+                        },
+                        linecolor: 'rgb(248, 249, 248)',
+                        linewidth: 0,
+                        tickformat: "%b %Y"
+                    },
+                    yaxis: {
+                        title: "",
+                        showgrid: true,
+                        gridcolor: '#f8f9fa',
+                        tickfont: {
+                            size: 10,
+                            color: 'gray'
+                        },
+                        linecolor: 'rgb(248, 249, 248)',
+                        linewidth: 0
+                    },
+                    margin: { t: 40, l: 30, r: 30, b: 40 },
+                    showlegend: false,
+                    plot_bgcolor: '#f8f9fa',
+                    paper_bgcolor: '#f8f9fa',
+                    hovermode: 'closest',
+                    transition: {
+                        duration: 500,
+                        easing: 'cubic-in-out'
+                    },
+                    clickmode: 'none'
+                };
+
+                var config = { 
+                    responsive: true,
+                    displaylogo: false, 
+                    displayModeBar: false
+                };
+
+                return Plotly.newPlot('line-chart', [trace], layout, config);
+            }
+            function createExpenseTreemap(data) {
+                const df = data
+
+                const values = df.map(d => d.TotalExpenses);
+                const labels = df.map(d => d.Child);
+                const parents = df.map(d => d.Parent);
+
+                const trace = {
+                    type: 'treemap',
+                    values: values,
+                    labels: labels,
+                    parents: parents
+                };
+
+                // Data array for Plotly
+                const plotData = [trace];
+
+                const layout = {
+                    title: "Expense Distribution",
+                    margin: { t: 40, l: 0, r: 0, b: 20 },
+                    transition: {
+                        duration: 500,  // Duration of the transition in milliseconds
+                        easing: 'cubic-in-out' // Easing function for smooth transition
+                    },
+                    clickmode: 'none',
+                    treemapcolorway: globalColorScale,
+                    plot_bgcolor: '#f8f9fa',
+                    paper_bgcolor: '#f8f9fa'
+                };
+
+                var config = { 
+                    responsive: true,
+                    displaylogo: false, 
+                    displayModeBar: false
+                };
+
+                const treemapChart = document.getElementById('treemap-chart');
+
+                var lastClickedItem = "";
+
+                // Render the plot and return the promise
+                return Plotly.newPlot('treemap-chart', plotData, layout, config).then(() => {
+                    treemapChart.on('plotly_click', function (eventData) {
+                        const clickedPoint = eventData.points[0];
+                        const label = clickedPoint.label;
+                        const parent = clickedPoint.parent;
+                        
+
+                        let mode = "";
+
+                        // Determine the selected category or subcategory based on the click
+                        if (lastClickedItem === label) {
+                            selectedCategory = 'All';
+                            lastClickedItem = "All";
+
+                        } else {
+                            if (!parent || parent === "") {
+                                // Top-level click, treat as all categories
+                                selectedCategory = 'All';
+                                lastClickedItem = "All";
+                                mode = "All"
+                            } else if (parent === "All") {
+                                // Handle category click
+                                selectedCategory = label;
+                                lastClickedItem = label;
+                                mode = "category";
+                            } else {
+                                // Handle subcategory click
+                                selectedCategory = label;
+                                lastClickedItem = label;
+                                mode = "subcategory";
+                            }
+                        }
+                        // If a category or subcategory is selected, call getExpenseHistory
+                        if (mode) {
+                            getExpenseHistory(selectedCategory, mode)
+                                .then(data => {
+                                    createExpenseLineChart(data,selectedCategory);
+                                })
+                                .catch(error => {
+                                    console.error("Error fetching expense history:", error);
+                                });
+                        }
+                    });
+                });
+            }
+
+            //Initial Chart loading
+
+            // Fetch data and create the treemap
+            getTreemapData().done(function(data) {
+                createExpenseTreemap(data);
+            }).fail(function(error) {
+                console.error("Error fetching data:", error);
+            });
+
+            // Fetch data and create the Line Chart
+            getExpenseHistory("All", "All").done(function(data) {
+                createExpenseLineChart(data,"All");
+            }).fail(function(error) {
+                console.error("Error fetching data:", error);
+            });
+        </script>
+    </body>
+</html>
